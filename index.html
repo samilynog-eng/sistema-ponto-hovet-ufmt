@@ -1,1 +1,1078 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Ponto - HOVET UFMT Sinop</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome para Ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ufmt: {
+                            blue: '#003366',
+                            lightBlue: '#1e40af',
+                            accent: '#0d9488',
+                            green: '#15803d',
+                            grayBg: '#f8fafc',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for modern aesthetics */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex flex-col font-sans text-slate-800">
 
+    <!-- CABEÇALHO INSTITUCIONAL -->
+    <header class="bg-ufmt-blue text-white shadow-lg border-b-4 border-ufmt-accent no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4 text-center md:text-left">
+                    <div class="bg-white p-2.5 rounded-xl text-ufmt-blue font-bold text-2xl shadow-sm flex items-center justify-center w-14 h-14 border border-slate-200">
+                        <i class="fa-solid fa-hospital-user text-ufmt-blue text-3xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-center md:justify-start gap-2">
+                            <span class="bg-emerald-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full tracking-wider uppercase">UFMT</span>
+                            <span class="text-xs text-slate-300 font-medium tracking-wide">Campus Universitário de Sinop</span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white mt-0.5">HOVET - Hospital Veterinário</h1>
+                        <p class="text-xs sm:text-sm text-slate-200 font-light">Programa de Residência em Área Profissional da Saúde / Medicina Veterinária</p>
+                    </div>
+                </div>
+
+                <!-- RELÓGIO EM TEMPO REAL -->
+                <div class="bg-slate-900/60 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 text-center shadow-inner flex flex-col items-center">
+                    <div class="text-xs text-slate-300 font-medium uppercase tracking-wider mb-0.5">
+                        <i class="fa-regular fa-clock text-teal-400 mr-1"></i> Horário Local (Sinop/MT)
+                    </div>
+                    <div id="liveClock" class="text-2xl font-extrabold tracking-wider text-emerald-400 font-mono">00:00:00</div>
+                    <div id="liveDate" class="text-xs text-slate-300 mt-0.5">-- de -- de ----</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVEGAÇÃO POR ABAS -->
+    <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-2 sm:space-x-8 overflow-x-auto py-2">
+                <button onclick="switchTab('registro')" id="tab-registro" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 text-ufmt-blue bg-blue-50 border border-blue-200 shadow-sm">
+                    <i class="fa-solid fa-fingerprint text-base"></i>
+                    <span>Registrar Ponto</span>
+                </button>
+                <button onclick="switchTab('espelho')" id="tab-espelho" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-ufmt-blue hover:bg-slate-50">
+                    <i class="fa-solid fa-file-invoice text-base"></i>
+                    <span>Meu Espelho de Ponto</span>
+                </button>
+                <button onclick="switchTab('coordenacao')" id="tab-coordenacao" class="tab-btn flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-ufmt-blue hover:bg-slate-50">
+                    <i class="fa-solid fa-user-shield text-base"></i>
+                    <span>Painel da Coordenação</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- METRICS OVERVIEW STRIP -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 no-print">
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="p-3 bg-blue-100 text-ufmt-blue rounded-lg">
+                    <i class="fa-solid fa-user-doctor text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Residentes Ativos</p>
+                    <p id="totalResidentsCount" class="text-xl font-bold text-slate-800">0</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="p-3 bg-emerald-100 text-emerald-700 rounded-lg">
+                    <i class="fa-solid fa-calendar-check text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Registros Hoje</p>
+                    <p id="todayRecordsCount" class="text-xl font-bold text-slate-800">0</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="p-3 bg-purple-100 text-purple-700 rounded-lg">
+                    <i class="fa-solid fa-business-time text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Plantões no Mês</p>
+                    <p id="monthShiftsCount" class="text-xl font-bold text-slate-800">0</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex items-center gap-4">
+                <div class="p-3 bg-teal-100 text-teal-700 rounded-lg">
+                    <i class="fa-solid fa-hospital-user text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Setores Registrados</p>
+                    <p id="totalSectorsCount" class="text-xl font-bold text-slate-800">6</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA 1: REGISTRAR PONTO -->
+        <section id="sec-registro" class="tab-content block space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- FORMULÁRIO DE PONTO -->
+                <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-gradient-to-r from-ufmt-blue to-slate-800 px-6 py-4 text-white">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-teal-400"></i>
+                            Novo Registro de Frequência / Plantão
+                        </h2>
+                        <p class="text-xs text-slate-300">Selecione o residente, confirme o documento e escolha o tipo de marcação</p>
+                    </div>
+
+                    <form id="punchForm" onsubmit="handlePunchSubmit(event)" class="p-6 space-y-5">
+                        
+                        <!-- ALERTA / NOTIFICAÇÃO DENTRO DO FORM -->
+                        <div id="punchAlert" class="hidden p-4 rounded-xl text-sm font-medium transition-all duration-300"></div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- SELEÇÃO DO RESIDENTE -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                    Residente Médico Veterinário *
+                                </label>
+                                <select id="punchResident" onchange="autoFillResidentDetails()" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 text-sm focus:ring-2 focus:ring-ufmt-blue focus:border-ufmt-blue outline-none transition-all">
+                                    <option value="">-- Selecione o Residente --</option>
+                                </select>
+                            </div>
+
+                            <!-- MATRÍCULA / CPF -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                    Matrícula / CPF *
+                                </label>
+                                <input type="text" id="punchMatricula" required placeholder="Digite a matrícula ou CPF" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 text-sm focus:ring-2 focus:ring-ufmt-blue focus:border-ufmt-blue outline-none transition-all">
+                            </div>
+
+                            <!-- PROGRAMA / SETOR -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                    Área de Concentração / Setor
+                                </label>
+                                <input type="text" id="punchArea" readonly placeholder="Selecione o residente acima" class="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-600 text-sm font-medium outline-none cursor-not-allowed">
+                            </div>
+                        </div>
+
+                        <!-- TIPO DE REGISTRO -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                Tipo de Marcação de Ponto *
+                            </label>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                                <label class="punch-type-card cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:border-ufmt-blue transition-all text-center">
+                                    <input type="radio" name="punchType" value="Entrada Regular" required class="peer hidden">
+                                    <i class="fa-solid fa-right-to-bracket text-emerald-600 text-lg"></i>
+                                    <span class="text-xs font-bold text-slate-700">Entrada</span>
+                                    <span class="text-[10px] text-slate-500">Turno Regular</span>
+                                </label>
+
+                                <label class="punch-type-card cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:border-ufmt-blue transition-all text-center">
+                                    <input type="radio" name="punchType" value="Saída Almoço" class="peer hidden">
+                                    <i class="fa-solid fa-utensils text-amber-600 text-lg"></i>
+                                    <span class="text-xs font-bold text-slate-700">Saída Intervalo</span>
+                                    <span class="text-[10px] text-slate-500">Almoço / Descanso</span>
+                                </label>
+
+                                <label class="punch-type-card cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:border-ufmt-blue transition-all text-center">
+                                    <input type="radio" name="punchType" value="Retorno Almoço" class="peer hidden">
+                                    <i class="fa-solid fa-mug-hot text-indigo-600 text-lg"></i>
+                                    <span class="text-xs font-bold text-slate-700">Retorno Intervalo</span>
+                                    <span class="text-[10px] text-slate-500">Retorno Turno</span>
+                                </label>
+
+                                <label class="punch-type-card cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:border-ufmt-blue transition-all text-center">
+                                    <input type="radio" name="punchType" value="Saída Regular" class="peer hidden">
+                                    <i class="fa-solid fa-right-from-bracket text-rose-600 text-lg"></i>
+                                    <span class="text-xs font-bold text-slate-700">Saída</span>
+                                    <span class="text-[10px] text-slate-500">Fim de Turno</span>
+                                </label>
+
+                                <label class="punch-type-card cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:border-ufmt-blue transition-all text-center">
+                                    <input type="radio" name="punchType" value="Plantão Entrada" class="peer hidden">
+                                    <i class="fa-solid fa-kit-medical text-purple-600 text-lg"></i>
+                                    <span class="text-xs font-bold text-slate-700">Início Plantão</span>
+                                    <span class="text-[10px] text-slate-500">Sobreaviso / Urgência</span>
+                                </label>
+
+                                <label class="punch-type-card cursor-pointer border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center gap-1.5 hover:border-ufmt-blue transition-all text-center">
+                                    <input type="radio" name="punchType" value="Plantão Saída" class="peer hidden">
+                                    <i class="fa-solid fa-house-medical-check text-blue-600 text-lg"></i>
+                                    <span class="text-xs font-bold text-slate-700">Fim Plantão</span>
+                                    <span class="text-[10px] text-slate-500">Encerramento</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- OBSERVAÇÃO OPCIONAL -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                Observação / Justificativa (Opcional)
+                            </label>
+                            <input type="text" id="punchNotes" placeholder="Ex: Atendimento de emergência, Cirurgia estendida, Troca de plantão..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 text-sm focus:ring-2 focus:ring-ufmt-blue focus:border-ufmt-blue outline-none transition-all">
+                        </div>
+
+                        <!-- BOTÃO PRINCIPAL -->
+                        <button type="submit" class="w-full bg-ufmt-blue hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-3 text-base">
+                            <i class="fa-solid fa-check-circle text-teal-400 text-xl"></i>
+                            <span>CONFIRMAR REGISTRO DE PONTO</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- ÚLTIMOS REGISTROS DO DIA (FEED EM TEMPO REAL) -->
+                <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                    <div class="bg-slate-50 border-b border-slate-200 px-6 py-4 rounded-t-2xl flex justify-between items-center">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-ufmt-blue"></i>
+                                Marcações Recentes (Hoje)
+                            </h3>
+                            <p class="text-xs text-slate-500">Fluxo de registros do HOVET Sinop</p>
+                        </div>
+                        <span class="bg-blue-100 text-ufmt-blue text-xs font-semibold px-2.5 py-1 rounded-full" id="todayCountBadge">0</span>
+                    </div>
+
+                    <div class="p-4 flex-1 overflow-y-auto max-h-[480px]" id="recentPunchesList">
+                        <!-- Lista alimentada dinamicamente via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ABA 2: ESPELHO DE PONTO (VISÃO DO RESIDENTE) -->
+        <section id="sec-espelho" class="tab-content hidden space-y-6">
+            <!-- FILTROS DO ESPELHO -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 no-print">
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                Selecionar Residente
+                            </label>
+                            <select id="mirrorResidentSelect" onchange="renderMirror()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 text-sm focus:ring-2 focus:ring-ufmt-blue outline-none">
+                                <!-- Opções via JS -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                Mês de Referência
+                            </label>
+                            <input type="month" id="mirrorMonthFilter" onchange="renderMirror()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2 text-slate-800 text-sm focus:ring-2 focus:ring-ufmt-blue outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                                Tipo de Atividade
+                            </label>
+                            <select id="mirrorTypeFilter" onchange="renderMirror()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 text-sm focus:ring-2 focus:ring-ufmt-blue outline-none">
+                                <option value="all">Todas as Marcações</option>
+                                <option value="regular">Turnos Regulares</option>
+                                <option value="plantao">Plantões / Urgência</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2.5 rounded-xl shadow transition-all text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-print"></i>
+                            <span>Imprimir Espelho</span>
+                        </button>
+                        <button onclick="exportCSV()" class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold px-4 py-2.5 rounded-xl shadow transition-all text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-file-csv"></i>
+                            <span>Exportar CSV</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RELATÓRIO DO ESPELHO DE PONTO (IMPRESSÃO / VISUALIZAÇÃO) -->
+            <div id="printableMirror" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+                <!-- Cabeçalho Oficial para Impressão -->
+                <div class="border-b-2 border-slate-800 pb-4 mb-4 flex justify-between items-start">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 uppercase tracking-tight">UNIVERSIDADE FEDERAL DE MATO GROSSO</h2>
+                        <h3 class="text-base font-semibold text-slate-700">CAMPUS UNIVERSITÁRIO DE SINOP - HOSPITAL VETERINÁRIO (HOVET)</h3>
+                        <p class="text-xs text-slate-500">PROGRAMA DE RESIDÊNCIA EM ÁREA PROFISSIONAL DA SAÚDE / MEDICINA VETERINÁRIA</p>
+                        <h4 class="text-sm font-bold text-ufmt-blue mt-2">RELATÓRIO DE ESPELHO DE PONTO E FREQUÊNCIA</h4>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <p>Emissão: <span id="printDate">--/--/----</span></p>
+                        <p>HOVET-SINOP / UFMT</p>
+                    </div>
+                </div>
+
+                <!-- CARD DE DADOS DO RESIDENTE -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                    <div>
+                        <span class="text-slate-500 block uppercase font-semibold text-[10px]">Residente:</span>
+                        <span id="mirrorResName" class="font-bold text-slate-800 text-sm">--</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block uppercase font-semibold text-[10px]">CPF / Matrícula:</span>
+                        <span id="mirrorResMatricula" class="font-bold text-slate-800 text-sm">--</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block uppercase font-semibold text-[10px]">Área de Atuação:</span>
+                        <span id="mirrorResArea" class="font-bold text-slate-800 text-sm">--</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-500 block uppercase font-semibold text-[10px]">Período de Referência:</span>
+                        <span id="mirrorPeriodText" class="font-bold text-slate-800 text-sm">--</span>
+                    </div>
+                </div>
+
+                <!-- RESUMO DE HORAS ACUMULADAS -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 no-print">
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center">
+                        <span class="text-xs text-slate-600 block">Total de Entradas</span>
+                        <span id="statEntradas" class="text-lg font-bold text-ufmt-blue">0</span>
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
+                        <span class="text-xs text-slate-600 block">Plantões Concluídos</span>
+                        <span id="statPlantoes" class="text-lg font-bold text-emerald-700">0</span>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
+                        <span class="text-xs text-slate-600 block">Registros Especiais</span>
+                        <span id="statObs" class="text-lg font-bold text-amber-700">0</span>
+                    </div>
+                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-3 text-center">
+                        <span class="text-xs text-slate-600 block">Total Registros no Mês</span>
+                        <span id="statTotal" class="text-lg font-bold text-purple-700">0</span>
+                    </div>
+                </div>
+
+                <!-- TABELA DE REGISTROS DO RESIDENTE -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-800 text-white">
+                                <th class="p-2.5 border border-slate-700">Data</th>
+                                <th class="p-2.5 border border-slate-700">Hora</th>
+                                <th class="p-2.5 border border-slate-700">Tipo de Marcação</th>
+                                <th class="p-2.5 border border-slate-700">Setor/Área</th>
+                                <th class="p-2.5 border border-slate-700">Observações / Justificativas</th>
+                                <th class="p-2.5 border border-slate-700 text-center no-print">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mirrorTableBody" class="divide-y divide-slate-200">
+                            <!-- Linhas inseridas via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ASSINATURAS PARA IMPRESSÃO -->
+                <div class="pt-12 grid grid-cols-2 gap-8 text-center text-xs print-only">
+                    <div>
+                        <div class="border-t border-slate-400 pt-2 font-semibold text-slate-800">
+                            Assinatura do Médico Veterinário Residente
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1" id="signResName">Residente</p>
+                    </div>
+                    <div>
+                        <div class="border-t border-slate-400 pt-2 font-semibold text-slate-800">
+                            Coordenação / Chefia do HOVET - UFMT Sinop
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1">Supervisão de Residência Veterinária</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABA 3: PAINEL DA COORDENAÇÃO -->
+        <section id="sec-coordenacao" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-user-shield text-ufmt-blue"></i>
+                            Painel de Controle e Supervisão da Coordenação
+                        </h2>
+                        <p class="text-xs text-slate-500">Monitoramento geral de frequência dos residentes do Hospital Veterinário</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="openAddResidentModal()" class="bg-ufmt-blue hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Cadastrar Residente</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FILTROS DO PAINEL DA COORDENAÇÃO -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Filtrar por Setor/Especialidade</label>
+                        <select id="coordAreaFilter" onchange="renderCoordinationPanel()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-800 text-xs focus:ring-2 focus:ring-ufmt-blue outline-none">
+                            <option value="all">Todas as Áreas</option>
+                            <option value="Clínica de Pequenos Animais">Clínica de Pequenos Animais</option>
+                            <option value="Cirurgia de Pequenos Animais">Cirurgia de Pequenos Animais</option>
+                            <option value="Clínica e Cirurgia de Grandes Animais">Clínica e Cirurgia de Grandes Animais</option>
+                            <option value="Patologia Veterinária">Patologia Veterinária</option>
+                            <option value="Anestesiologia Veterinária">Anestesiologia Veterinária</option>
+                            <option value="Diagnóstico por Imagem">Diagnóstico por Imagem</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Buscar Residente ou Matrícula</label>
+                        <input type="text" id="coordSearchInput" oninput="renderCoordinationPanel()" placeholder="Digite nome ou CPF..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-800 text-xs focus:ring-2 focus:ring-ufmt-blue outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Data Específica</label>
+                        <input type="date" id="coordDateFilter" onchange="renderCoordinationPanel()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-slate-800 text-xs focus:ring-2 focus:ring-ufmt-blue outline-none">
+                    </div>
+                </div>
+
+                <!-- TABELA DE REGISTROS GERAIS DA COORDENAÇÃO -->
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider">
+                                <th class="p-3 border-b">Data/Hora</th>
+                                <th class="p-3 border-b">Residente</th>
+                                <th class="p-3 border-b">Área/Setor</th>
+                                <th class="p-3 border-b">Tipo de Registro</th>
+                                <th class="p-3 border-b">Observação</th>
+                                <th class="p-3 border-b text-center">Status / Alerta</th>
+                                <th class="p-3 border-b text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coordTableBody" class="divide-y divide-slate-200 bg-white">
+                            <!-- Linhas via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL DE CADASTRO DE RESIDENTE -->
+    <div id="addResidentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 relative animate-fade-in">
+            <button onclick="closeAddResidentModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-base font-bold text-slate-900 flex items-center gap-2 mb-4">
+                <i class="fa-solid fa-user-plus text-ufmt-blue"></i>
+                Cadastrar Novo Residente HOVET
+            </h3>
+
+            <form onsubmit="handleCreateResident(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Completo *</label>
+                    <input type="text" id="newResName" required placeholder="Ex: Dra. Mariana Silva" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-ufmt-blue outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">CPF ou Matrícula UFMT *</label>
+                    <input type="text" id="newResMatricula" required placeholder="Ex: 2024119822" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-ufmt-blue outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Área de Concentração / Especialidade *</label>
+                    <select id="newResArea" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-ufmt-blue outline-none">
+                        <option value="Clínica de Pequenos Animais">Clínica de Pequenos Animais</option>
+                        <option value="Cirurgia de Pequenos Animais">Cirurgia de Pequenos Animais</option>
+                        <option value="Clínica e Cirurgia de Grandes Animais">Clínica e Cirurgia de Grandes Animais</option>
+                        <option value="Patologia Veterinária">Patologia Veterinária</option>
+                        <option value="Anestesiologia Veterinária">Anestesiologia Veterinária</option>
+                        <option value="Diagnóstico por Imagem">Diagnóstico por Imagem</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeAddResidentModal()" class="w-1/2 bg-slate-100 text-slate-700 font-semibold py-2 rounded-xl text-xs hover:bg-slate-200">Cancelar</button>
+                    <button type="submit" class="w-1/2 bg-ufmt-blue text-white font-semibold py-2 rounded-xl text-xs hover:bg-slate-800">Salvar Residente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- RODAPÉ INSTITUCIONAL -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-xs no-print mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
+            <p class="font-semibold text-slate-300">HOVET - Hospital Veterinário da UFMT Campus Sinop</p>
+            <p>Av. Alexandre Ferronato, nº 1.200, Reserva Setorial - Sinop/MT - CEP 78550-728</p>
+            <p class="text-slate-500 text-[11px]">Sistema Interno de Controle de Ponto e Frequência para Médicos Veterinários Residentes © 2026</p>
+        </div>
+    </footer>
+
+    <!-- LOGICA EM JAVASCRIPT -->
+    <script>
+        // --- BASE DE DADOS INICIAL / DEFAULT ---
+        const DEFAULT_RESIDENTS = [
+            { id: "1", name: "Dra. Ana Paula Souza", matricula: "202501091", area: "Clínica de Pequenos Animais" },
+            { id: "2", name: "Dr. Carlos Eduardo Lima", matricula: "202501092", area: "Clínica e Cirurgia de Grandes Animais" },
+            { id: "3", name: "Dra. Beatriz Santos", matricula: "202501093", area: "Anestesiologia Veterinária" },
+            { id: "4", name: "Dr. Fernando Mendes", matricula: "202501094", area: "Patologia Veterinária" },
+            { id: "5", name: "Dra. Juliana Rocha", matricula: "202501095", area: "Diagnóstico por Imagem" },
+            { id: "6", name: "Dr. Lucas Martins", matricula: "202501096", area: "Cirurgia de Pequenos Animais" }
+        ];
+
+        // MOCK DE REGISTROS DE PONTO INICIAIS
+        const todayStr = new Date().toISOString().split('T')[0];
+        const DEFAULT_PUNCHES = [
+            {
+                id: 'p1',
+                residentId: '1',
+                residentName: 'Dra. Ana Paula Souza',
+                matricula: '202501091',
+                area: 'Clínica de Pequenos Animais',
+                type: 'Entrada Regular',
+                date: todayStr,
+                time: '07:02:15',
+                timestamp: Date.now() - 3600000 * 4,
+                notes: 'Chegada no horário regular'
+            },
+            {
+                id: 'p2',
+                residentId: '2',
+                residentName: 'Dr. Carlos Eduardo Lima',
+                matricula: '202501092',
+                area: 'Clínica e Cirurgia de Grandes Animais',
+                type: 'Plantão Entrada',
+                date: todayStr,
+                time: '08:00:00',
+                timestamp: Date.now() - 3600000 * 3,
+                notes: 'Plantão de sobreaviso grandes animais'
+            },
+            {
+                id: 'p3',
+                residentId: '3',
+                residentName: 'Dra. Beatriz Santos',
+                matricula: '202501093',
+                area: 'Anestesiologia Veterinária',
+                type: 'Entrada Regular',
+                date: todayStr,
+                time: '07:30:45',
+                timestamp: Date.now() - 3600000 * 2,
+                notes: 'Preparo de anestesia para cirurgia'
+            }
+        ];
+
+        // ESTADO GLOBAL DA APLICAÇÃO
+        let residents = [];
+        let punches = [];
+
+        // INITIALIZATION
+        window.onload = function() {
+            loadInitialData();
+            startLiveClock();
+            populateResidentDropdowns();
+            renderRecentPunches();
+            updateMetrics();
+            setCurrentMonthFilter();
+            renderMirror();
+            renderCoordinationPanel();
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString('pt-BR');
+        };
+
+        // --- CARREGAMENTO LOCALSTORAGE ---
+        function loadInitialData() {
+            const storedResidents = localStorage.getItem('hovet_residents');
+            if (storedResidents) {
+                residents = JSON.parse(storedResidents);
+            } else {
+                residents = DEFAULT_RESIDENTS;
+                localStorage.setItem('hovet_residents', JSON.stringify(residents));
+            }
+
+            const storedPunches = localStorage.getItem('hovet_punches');
+            if (storedPunches) {
+                punches = JSON.parse(storedPunches);
+            } else {
+                punches = DEFAULT_PUNCHES;
+                localStorage.setItem('hovet_punches', JSON.stringify(punches));
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('hovet_residents', JSON.stringify(residents));
+            localStorage.setItem('hovet_punches', JSON.stringify(punches));
+        }
+
+        // --- RELÓGIO EM TEMPO REAL ---
+        function startLiveClock() {
+            function updateClock() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('pt-BR', { hour12: false });
+                const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const dateString = now.toLocaleDateString('pt-BR', dateOptions);
+
+                const clockEl = document.getElementById('liveClock');
+                const dateEl = document.getElementById('liveDate');
+                if (clockEl) clockEl.innerText = timeString;
+                if (dateEl) dateEl.innerText = dateString;
+            }
+            updateClock();
+            setInterval(updateClock, 1000);
+        }
+
+        // --- NAVEGAÇÃO ENTRE ABAS ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-ufmt-blue', 'bg-blue-50', 'border', 'border-blue-200', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+
+            const targetSection = document.getElementById(`sec-${tabId}`);
+            const targetBtn = document.getElementById(`tab-${tabId}`);
+            if (targetSection && targetBtn) {
+                targetSection.classList.remove('hidden');
+                targetBtn.classList.add('text-ufmt-blue', 'bg-blue-50', 'border', 'border-blue-200', 'shadow-sm');
+                targetBtn.classList.remove('text-slate-600');
+            }
+
+            if (tabId === 'espelho') renderMirror();
+            if (tabId === 'coordenacao') renderCoordinationPanel();
+        }
+
+        // --- PREENCHIMENTO DE SELECTS E AUTOFILL ---
+        function populateResidentDropdowns() {
+            const punchSelect = document.getElementById('punchResident');
+            const mirrorSelect = document.getElementById('mirrorResidentSelect');
+
+            punchSelect.innerHTML = '<option value="">-- Selecione o Residente --</option>';
+            mirrorSelect.innerHTML = '';
+
+            residents.forEach(r => {
+                const opt1 = document.createElement('option');
+                opt1.value = r.id;
+                opt1.textContent = `${r.name} (${r.area})`;
+                punchSelect.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = r.id;
+                opt2.textContent = `${r.name} - ${r.area}`;
+                mirrorSelect.appendChild(opt2);
+            });
+        }
+
+        function autoFillResidentDetails() {
+            const resId = document.getElementById('punchResident').value;
+            const matInput = document.getElementById('punchMatricula');
+            const areaInput = document.getElementById('punchArea');
+
+            const resident = residents.find(r => r.id === resId);
+            if (resident) {
+                matInput.value = resident.matricula;
+                areaInput.value = resident.area;
+            } else {
+                matInput.value = '';
+                areaInput.value = '';
+            }
+        }
+
+        // --- REGISTRO DE PONTO SUBMIT ---
+        function handlePunchSubmit(event) {
+            event.preventDefault();
+            const resId = document.getElementById('punchResident').value;
+            const matricula = document.getElementById('punchMatricula').value.trim();
+            const typeSelected = document.querySelector('input[name="punchType"]:checked');
+            const notes = document.getElementById('punchNotes').value.trim();
+
+            const alertEl = document.getElementById('punchAlert');
+
+            if (!resId || !matricula || !typeSelected) {
+                showAlert('punchAlert', 'Por favor, preencha todos os campos obrigatórios.', 'error');
+                return;
+            }
+
+            const resident = residents.find(r => r.id === resId);
+            if (!resident) {
+                showAlert('punchAlert', 'Residente não encontrado no cadastro.', 'error');
+                return;
+            }
+
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour12: false });
+
+            const newPunch = {
+                id: 'p_' + Date.now(),
+                residentId: resident.id,
+                residentName: resident.name,
+                matricula: matricula,
+                area: resident.area,
+                type: typeSelected.value,
+                date: dateStr,
+                time: timeStr,
+                timestamp: now.getTime(),
+                notes: notes
+            };
+
+            punches.unshift(newPunch);
+            saveData();
+
+            showAlert('punchAlert', `Ponto de (${typeSelected.value}) registrado com sucesso para ${resident.name} às ${timeStr}!`, 'success');
+
+            // Reset Form parcialmente
+            document.getElementById('punchNotes').value = '';
+            typeSelected.checked = false;
+
+            renderRecentPunches();
+            updateMetrics();
+        }
+
+        function showAlert(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800', 'border-emerald-300', 'border-rose-300');
+            
+            if (type === 'success') {
+                el.classList.add('bg-emerald-100', 'text-emerald-800', 'border', 'border-emerald-300');
+            } else {
+                el.classList.add('bg-rose-100', 'text-rose-800', 'border', 'border-rose-300');
+            }
+            el.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'} mr-2"></i> ${message}`;
+            
+            setTimeout(() => {
+                el.classList.add('hidden');
+            }, 5000);
+        }
+
+        // --- RENDERIZAR LISTA RECENTE NA PRIMEIRA ABA ---
+        function renderRecentPunches() {
+            const container = document.getElementById('recentPunchesList');
+            const today = new Date().toISOString().split('T')[0];
+            const todayPunches = punches.filter(p => p.date === today);
+
+            document.getElementById('todayCountBadge').innerText = todayPunches.length;
+
+            if (todayPunches.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-slate-400">
+                        <i class="fa-solid fa-clock text-3xl mb-2"></i>
+                        <p class="text-xs">Nenhum ponto registrado hoje ainda.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = todayPunches.map(p => `
+                <div class="p-3 mb-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100/80 transition-all">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="font-bold text-xs text-slate-800">${escapeHtml(p.residentName)}</span>
+                        <span class="text-[11px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-slate-200 text-ufmt-blue">${p.time}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[11px] text-slate-500">
+                        <span class="inline-flex items-center gap-1 font-semibold ${getTypeColor(p.type)}">
+                            ${getPunchIcon(p.type)} ${p.type}
+                        </span>
+                        <span class="truncate max-w-[150px] text-slate-400">${escapeHtml(p.area)}</span>
+                    </div>
+                    ${p.notes ? `<p class="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded mt-1.5 font-medium">Obs: ${escapeHtml(p.notes)}</p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function getPunchIcon(type) {
+            if (type.includes('Entrada')) return '<i class="fa-solid fa-right-to-bracket"></i>';
+            if (type.includes('Saída')) return '<i class="fa-solid fa-right-from-bracket"></i>';
+            if (type.includes('Plantão')) return '<i class="fa-solid fa-kit-medical"></i>';
+            return '<i class="fa-solid fa-clock"></i>';
+        }
+
+        function getTypeColor(type) {
+            if (type === 'Entrada Regular') return 'text-emerald-700';
+            if (type === 'Saída Regular') return 'text-rose-700';
+            if (type.includes('Plantão')) return 'text-purple-700';
+            return 'text-amber-700';
+        }
+
+        // --- RENDER ESPELHO DE PONTO (RESIDENTE) ---
+        function setCurrentMonthFilter() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            document.getElementById('mirrorMonthFilter').value = `${year}-${month}`;
+        }
+
+        function renderMirror() {
+            const resId = document.getElementById('mirrorResidentSelect').value;
+            const monthFilter = document.getElementById('mirrorMonthFilter').value; // YYYY-MM
+            const typeFilter = document.getElementById('mirrorTypeFilter').value;
+
+            const resident = residents.find(r => r.id === resId);
+            if (!resident) return;
+
+            document.getElementById('mirrorResName').innerText = resident.name;
+            document.getElementById('mirrorResMatricula').innerText = resident.matricula;
+            document.getElementById('mirrorResArea').innerText = resident.area;
+            document.getElementById('signResName').innerText = resident.name;
+            document.getElementById('mirrorPeriodText').innerText = monthFilter || 'Todos os Registros';
+
+            let filtered = punches.filter(p => p.residentId === resId);
+
+            if (monthFilter) {
+                filtered = filtered.filter(p => p.date.startsWith(monthFilter));
+            }
+
+            if (typeFilter === 'regular') {
+                filtered = filtered.filter(p => !p.type.includes('Plantão'));
+            } else if (typeFilter === 'plantao') {
+                filtered = filtered.filter(p => p.type.includes('Plantão'));
+            }
+
+            // Atualiza Cards de estatísticas
+            document.getElementById('statEntradas').innerText = filtered.filter(p => p.type.includes('Entrada')).length;
+            document.getElementById('statPlantoes').innerText = filtered.filter(p => p.type.includes('Plantão')).length;
+            document.getElementById('statObs').innerText = filtered.filter(p => p.notes && p.notes.length > 0).length;
+            document.getElementById('statTotal').innerText = filtered.length;
+
+            const tbody = document.getElementById('mirrorTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-6 text-slate-400 text-xs">
+                            Nenhum registro encontrado para este filtro.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(p => `
+                <tr class="hover:bg-slate-50 transition-all">
+                    <td class="p-2.5 border border-slate-200 font-mono">${formatDateBR(p.date)}</td>
+                    <td class="p-2.5 border border-slate-200 font-mono font-bold text-ufmt-blue">${p.time}</td>
+                    <td class="p-2.5 border border-slate-200 font-semibold ${getTypeColor(p.type)}">
+                        ${getPunchIcon(p.type)} ${p.type}
+                    </td>
+                    <td class="p-2.5 border border-slate-200 text-slate-600">${escapeHtml(p.area)}</td>
+                    <td class="p-2.5 border border-slate-200 text-slate-600">${p.notes ? escapeHtml(p.notes) : '-'}</td>
+                    <td class="p-2.5 border border-slate-200 text-center no-print">
+                        <button onclick="deletePunch('${p.id}')" title="Excluir marcação" class="text-rose-500 hover:text-rose-700 p-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- RENDER PAINEL DA COORDENAÇÃO ---
+        function renderCoordinationPanel() {
+            const areaFilter = document.getElementById('coordAreaFilter').value;
+            const searchInput = document.getElementById('coordSearchInput').value.toLowerCase().trim();
+            const dateFilter = document.getElementById('coordDateFilter').value;
+
+            let filtered = [...punches];
+
+            if (areaFilter !== 'all') {
+                filtered = filtered.filter(p => p.area === areaFilter);
+            }
+
+            if (searchInput) {
+                filtered = filtered.filter(p => 
+                    p.residentName.toLowerCase().includes(searchInput) || 
+                    p.matricula.toLowerCase().includes(searchInput)
+                );
+            }
+
+            if (dateFilter) {
+                filtered = filtered.filter(p => p.date === dateFilter);
+            }
+
+            const tbody = document.getElementById('coordTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-slate-400">
+                            Nenhum registro correspondente aos filtros da coordenação.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(p => {
+                let statusBadge = '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">OK</span>';
+                if (p.type.includes('Plantão')) {
+                    statusBadge = '<span class="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Plantão</span>';
+                } else if (p.notes) {
+                    statusBadge = '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Com Obs</span>';
+                }
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="p-3 border-b font-mono">
+                            <div class="font-bold text-slate-800">${formatDateBR(p.date)}</div>
+                            <div class="text-[11px] text-slate-500">${p.time}</div>
+                        </td>
+                        <td class="p-3 border-b font-semibold text-slate-800">
+                            ${escapeHtml(p.residentName)}
+                            <div class="text-[10px] text-slate-400 font-mono">CPF/Mat: ${escapeHtml(p.matricula)}</div>
+                        </td>
+                        <td class="p-3 border-b text-slate-600">${escapeHtml(p.area)}</td>
+                        <td class="p-3 border-b font-semibold ${getTypeColor(p.type)}">
+                            ${getPunchIcon(p.type)} ${p.type}
+                        </td>
+                        <td class="p-3 border-b text-slate-600 max-w-xs truncate">${p.notes ? escapeHtml(p.notes) : '-'}</td>
+                        <td class="p-3 border-b text-center">${statusBadge}</td>
+                        <td class="p-3 border-b text-center">
+                            <button onclick="deletePunch('${p.id}')" title="Remover registro" class="text-rose-600 hover:text-rose-800 p-1">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- MANIPULAÇÃO DE RESIDENTES (MODAL) ---
+        function openAddResidentModal() {
+            document.getElementById('addResidentModal').classList.remove('hidden');
+        }
+
+        function closeAddResidentModal() {
+            document.getElementById('addResidentModal').classList.add('hidden');
+        }
+
+        function handleCreateResident(e) {
+            e.preventDefault();
+            const name = document.getElementById('newResName').value.trim();
+            const matricula = document.getElementById('newResMatricula').value.trim();
+            const area = document.getElementById('newResArea').value;
+
+            if (!name || !matricula || !area) return;
+
+            const newRes = {
+                id: 'res_' + Date.now(),
+                name: name,
+                matricula: matricula,
+                area: area
+            };
+
+            residents.push(newRes);
+            saveData();
+            populateResidentDropdowns();
+            updateMetrics();
+            closeAddResidentModal();
+
+            // Limpa form modal
+            document.getElementById('newResName').value = '';
+            document.getElementById('newResMatricula').value = '';
+            alert('Novo Residente cadastrado com sucesso!');
+        }
+
+        // --- EXCLUIR REGISTRO DE PONTO ---
+        function deletePunch(punchId) {
+            if (confirm('Tem certeza que deseja excluir esta marcação de ponto?')) {
+                punches = punches.filter(p => p.id !== punchId);
+                saveData();
+                renderRecentPunches();
+                renderMirror();
+                renderCoordinationPanel();
+                updateMetrics();
+            }
+        }
+
+        // --- METRICAS DA HEADER BAR ---
+        function updateMetrics() {
+            document.getElementById('totalResidentsCount').innerText = residents.length;
+            const today = new Date().toISOString().split('T')[0];
+            const todayPunches = punches.filter(p => p.date === today);
+            document.getElementById('todayRecordsCount').innerText = todayPunches.length;
+
+            const nowMonth = new Date().toISOString().substring(0, 7);
+            const monthShifts = punches.filter(p => p.date.startsWith(nowMonth) && p.type.includes('Plantão'));
+            document.getElementById('monthShiftsCount').innerText = monthShifts.length;
+        }
+
+        // --- EXPORTAR EXCEL/CSV ---
+        function exportCSV() {
+            const resId = document.getElementById('mirrorResidentSelect').value;
+            const resident = residents.find(r => r.id === resId);
+            if (!resident) return;
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Data,Hora,Residente,Matricula,Area,Tipo_Marcacao,Observacao\n";
+
+            const userPunches = punches.filter(p => p.residentId === resId);
+
+            userPunches.forEach(p => {
+                const row = [
+                    p.date,
+                    p.time,
+                    `"${p.residentName}"`,
+                    `"${p.matricula}"`,
+                    `"${p.area}"`,
+                    `"${p.type}"`,
+                    `"${p.notes || ''}"`
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Ponto_HOVET_${resident.name.replace(/\s+/g, '_')}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- UTILS DE FORMATAÇÃO ---
+        function formatDateBR(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
