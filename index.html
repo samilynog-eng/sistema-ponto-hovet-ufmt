@@ -3,1241 +3,638 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ponto Eletrônico HOVET - UFMT Sinop</title>
-  <!-- React & React DOM -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <!-- Babel compiler -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Tailwind CSS -->
+  <title>Ponto Eletrônico - Residentes HOVET / UFMT</title>
+  <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            mono: ['JetBrains Mono', 'monospace'],
-          },
-          colors: {
-            ufmt: {
-              green: '#006837',
-              darkgreen: '#004d28',
-              lightgreen: '#e6f4ed',
-              blue: '#00529b',
-              amber: '#d97706'
-            }
-          }
-        }
-      }
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
     }
-  </script>
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white">
-  <div id="root"></div>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between antialiased">
 
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+  <!-- CABEÇALHO -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 text-white p-2 rounded-lg font-bold">
+          <i class="fa-solid fa-hospital flex-shrink-0"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-900 text-base leading-tight">HOVET / UFMT</h1>
+          <p class="text-xs text-slate-500">Ponto Eletrônico da Residência Veterinária</p>
+        </div>
+      </div>
+      <div id="userHeaderInfo" class="hidden flex items-center space-x-3">
+        <div class="text-right">
+          <span id="userName" class="block font-medium text-sm text-slate-800"></span>
+          <span id="userRole" class="block text-xs text-blue-600 font-semibold uppercase"></span>
+        </div>
+        <button onclick="logout()" class="p-2 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded-lg transition" title="Sair">
+          <i class="fa-solid fa-right-from-bracket text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </header>
 
-    // === DADOS INICIAIS DA APLICAÇÃO ===
-    const INITIAL_USERS = [
-      {
-        id: 'res-1',
-        name: 'Dra. Maria Souza',
-        crmv: 'CRMV-MT 4589',
-        area: 'Anestesiologia Veterinária',
-        email: 'maria',
-        pass: '123',
-        role: 'resident'
-      },
-      {
-        id: 'res-2',
-        name: 'Dr. João Pedro Santos',
-        crmv: 'CRMV-MT 5120',
-        area: 'Clínica de Grandes Animais',
-        email: 'joao',
-        pass: '123',
-        role: 'resident'
-      },
-      {
-        id: 'res-3',
-        name: 'Dra. Ana Paula Silva',
-        crmv: 'CRMV-MT 4890',
-        area: 'Cirurgia de Pequenos Animais',
-        email: 'ana',
-        pass: '123',
-        role: 'resident'
-      },
-      {
-        id: 'admin-1',
-        name: 'Prof. Dr. Coordenador HOVET',
-        crmv: 'CRMV-MT 2100',
-        area: 'Coordenação Geral da Residência',
-        email: 'admin',
-        pass: '123',
-        role: 'admin'
-      }
-    ];
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full">
 
-    const INITIAL_RECORDS = [
-      {
-        id: 'rec-1',
-        residentId: 'res-1',
-        residentName: 'Dra. Maria Souza',
-        crmv: 'CRMV-MT 4589',
-        type: 'Entrada',
-        timestamp: '2026-10-30T07:01:20',
-        date: '2026-10-30',
-        time: '07:01:20',
-        lat: -11.858421,
-        lng: -55.514210,
-        gpsStatus: 'GPS Alta Precisão',
-        observation: 'Chegada antecipada para procedimento de emergência.'
-      },
-      {
-        id: 'rec-2',
-        residentId: 'res-1',
-        residentName: 'Dra. Maria Souza',
-        crmv: 'CRMV-MT 4589',
-        type: 'Saída Almoço',
-        timestamp: '2026-10-30T11:30:45',
-        date: '2026-10-30',
-        time: '11:30:45',
-        lat: -11.858400,
-        lng: -55.514190,
-        gpsStatus: 'GPS Alta Precisão',
-        observation: ''
-      },
-      {
-        id: 'rec-3',
-        residentId: 'res-2',
-        residentName: 'Dr. João Pedro Santos',
-        crmv: 'CRMV-MT 5120',
-        type: 'Entrada Plantão',
-        timestamp: '2026-10-30T18:00:10',
-        date: '2026-10-30',
-        time: '18:00:10',
-        lat: -11.858450,
-        lng: -55.514300,
-        gpsStatus: 'GPS Alta Precisão',
-        observation: 'Início de plantão no setor de Grandes Animais.'
-      }
-    ];
+    <!-- TELA DE LOGIN -->
+    <section id="loginScreen" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-200 mt-6">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-slate-900">Acesso ao Sistema</h2>
+        <p class="text-sm text-slate-500 mt-1">Identifique-se para gerenciar o ponto</p>
+      </div>
 
-    function App() {
-      // === ESTADOS DO SISTEMA COM PERSISTÊNCIA LOCALSTORAGE ===
-      const [users, setUsers] = useState(() => {
-        const saved = localStorage.getItem('hovet_users');
-        return saved ? JSON.parse(saved) : INITIAL_USERS;
-      });
+      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">E-mail corporativo / institucional</label>
+          <div class="relative">
+            <i class="fa-solid fa-envelope absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+            <input type="email" id="loginEmail" required class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="exemplo@ufmt.br">
+          </div>
+        </div>
 
-      const [punchRecords, setPunchRecords] = useState(() => {
-        const saved = localStorage.getItem('hovet_records');
-        return saved ? JSON.parse(saved) : INITIAL_RECORDS;
-      });
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+          <div class="relative">
+            <i class="fa-solid fa-lock absolute left-3 top-3.5 text-slate-400 text-sm"></i>
+            <input type="password" id="loginPassword" required class="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white" placeholder="••••••••">
+          </div>
+        </div>
 
-      const [currentUser, setCurrentUser] = useState(() => {
-        const saved = localStorage.getItem('hovet_current_user');
-        return saved ? JSON.parse(saved) : null;
-      });
+        <div id="loginError" class="hidden text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-200">
+          E-mail ou senha incorretos. Tente novamente.
+        </div>
 
-      // Aba ativa
-      const [activeTab, setActiveTab] = useState('punch'); 
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm">
+          Entrar
+        </button>
 
-      // Formulário de Login
-      const [loginUser, setLoginUser] = useState('');
-      const [loginPass, setLoginPass] = useState('');
-      const [loginRoleToggle, setLoginRoleToggle] = useState('resident'); // 'resident' ou 'admin'
-      const [loginError, setLoginError] = useState('');
+        <div class="bg-blue-50/70 p-3 rounded-lg border border-blue-100 text-xs text-slate-600 space-y-1 mt-4">
+          <p class="font-semibold text-blue-900 mb-1"><i class="fa-solid fa-circle-info me-1"></i> Contas de Simulação:</p>
+          <p>• <strong>Residente:</strong> residente@ufmt.br (Senha: 123456)</p>
+          <p>• <strong>Coordenador:</strong> coord@ufmt.br (Senha: 123456)</p>
+        </div>
+      </form>
+    </section>
 
-      // Modal de Ponto
-      const [isModalOpen, setIsModalOpen] = useState(false);
-      const [selectedPunchType, setSelectedPunchType] = useState('');
-      const [punchObservation, setPunchObservation] = useState('');
-      const [isFetchingGps, setIsFetchingGps] = useState(false);
-      const [gpsData, setGpsData] = useState({ lat: null, lng: null, status: '', error: false });
-      const [toastMessage, setToastMessage] = useState('');
+    <!-- PAINEL DO RESIDENTE -->
+    <section id="residentDashboard" class="hidden space-y-6">
+      
+      <!-- CARD DE REGISTRO RÁPIDO E CRONÔMETRO -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+        <div class="md:col-span-2 space-y-4">
+          <div>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 mb-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 me-1.5 animate-pulse"></span> Sistema Ativo
+            </span>
+            <h2 class="text-2xl font-bold text-slate-900">Registro de Frequência</h2>
+            <p class="text-sm text-slate-500">Selecione o setor atual e registre a entrada/saída do turno.</p>
+          </div>
 
-      // Filtros de Relatório
-      const [filterResidentId, setFilterResidentId] = useState('ALL');
-      const [filterStartDate, setFilterStartDate] = useState('');
-      const [filterEndDate, setFilterEndDate] = useState('');
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Setor / Área de Atuação</label>
+              <select id="residentSector" class="w-full bg-slate-50 border border-slate-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="Anestesiologia Veterinária">Anestesiologia Veterinária</option>
+                <option value="Clínica Cirúrgica de Animais de Companhia">Clínica Cirúrgica de Animais de Companhia</option>
+                <option value="Clínica Médica de Animais de Companhia">Clínica Médica de Animais de Companhia</option>
+                <option value="Clínica Médica e Cirúrgica de Grandes Animais">Clínica Médica e Cirúrgica de Grandes Animais</option>
+                <option value="Diagnóstico por Imagem em Medicina Veterinária">Diagnóstico por Imagem em Medicina Veterinária</option>
+                <option value="Medicina Veterinária Preventiva">Medicina Veterinária Preventiva</option>
+                <option value="Patologia Animal">Patologia Animal</option>
+                <option value="Patologia Clínica Veterinária">Patologia Clínica Veterinária</option>
+                <option value="Reprodução Animal e Obstetrícia Veterinária nos Animais Domésticos">Reprodução Animal e Obstetrícia Veterinária nos Animais Domésticos</option>
+              </select>
+            </div>
 
-      // Novo Residente Form (Coordenação)
-      const [newRes, setNewRes] = useState({ name: '', crmv: '', area: '', email: '', pass: '' });
-      const [adminNotice, setAdminNotice] = useState('');
-
-      // Data/Hora em tempo real
-      const [now, setNow] = useState(new Date());
-
-      useEffect(() => {
-        const timer = setInterval(() => setNow(new Date()), 1000);
-        return () => clearInterval(timer);
-      }, []);
-
-      // Gravação no localStorage
-      useEffect(() => {
-        localStorage.setItem('hovet_users', JSON.stringify(users));
-      }, [users]);
-
-      useEffect(() => {
-        localStorage.setItem('hovet_records', JSON.stringify(punchRecords));
-      }, [punchRecords]);
-
-      useEffect(() => {
-        if (currentUser) {
-          localStorage.setItem('hovet_current_user', JSON.stringify(currentUser));
-        } else {
-          localStorage.removeItem('hovet_current_user');
-        }
-      }, [currentUser]);
-
-      // Login
-      const handleLogin = (e) => {
-        e.preventDefault();
-        setLoginError('');
-        const user = users.find(u => 
-          u.email.toLowerCase().trim() === loginUser.toLowerCase().trim() && 
-          u.pass === loginPass &&
-          u.role === loginRoleToggle
-        );
-
-        if (user) {
-          setCurrentUser(user);
-          setActiveTab(user.role === 'admin' ? 'admin-report' : 'punch');
-        } else {
-          setLoginError('Credenciais inválidas para o perfil selecionado. Teste os acessos rápidos abaixo!');
-        }
-      };
-
-      // Atalho de Login Rápido
-      const quickLogin = (type) => {
-        if (type === 'maria') {
-          const u = users.find(x => x.email === 'maria');
-          if (u) { setCurrentUser(u); setActiveTab('punch'); }
-        } else if (type === 'admin') {
-          const u = users.find(x => x.email === 'admin');
-          if (u) { setCurrentUser(u); setActiveTab('admin-report'); }
-        }
-      };
-
-      const handleLogout = () => {
-        setCurrentUser(null);
-        setLoginUser('');
-        setLoginPass('');
-      };
-
-      // Abrir modal para bater ponto
-      const triggerPunchModal = (type) => {
-        setSelectedPunchType(type);
-        setPunchObservation('');
-        setIsModalOpen(true);
-        setIsFetchingGps(true);
-        setGpsData({ lat: null, lng: null, status: 'Capturando geolocalização do dispositivo...', error: false });
-
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              setGpsData({
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-                status: 'GPS Localizado com Sucesso!',
-                error: false
-              });
-              setIsFetchingGps(false);
-            },
-            (err) => {
-              // Fallback HOVET UFMT Sinop se o GPS for negado ou indisponível
-              setGpsData({
-                lat: -11.858421,
-                lng: -55.514210,
-                status: 'GPS Aproximado (HOVET UFMT Sinop)',
-                error: true
-              });
-              setIsFetchingGps(false);
-            },
-            { enableHighAccuracy: true, timeout: 8000 }
-          );
-        } else {
-          setGpsData({
-            lat: -11.858421,
-            lng: -55.514210,
-            status: 'GPS não suportado. Coordenadas padrão HOVET.',
-            error: true
-          });
-          setIsFetchingGps(false);
-        }
-      };
-
-      // Salvar Ponto
-      const confirmPunch = () => {
-        if (!currentUser) return;
-        const currentDate = new Date();
-        const formattedDate = currentDate.toISOString().split('T')[0];
-        const formattedTime = currentDate.toTimeString().split(' ')[0];
-
-        const record = {
-          id: 'rec-' + Date.now(),
-          residentId: currentUser.id,
-          residentName: currentUser.name,
-          crmv: currentUser.crmv || 'Não informado',
-          type: selectedPunchType,
-          timestamp: currentDate.toISOString(),
-          date: formattedDate,
-          time: formattedTime,
-          lat: gpsData.lat || -11.858421,
-          lng: gpsData.lng || -55.514210,
-          gpsStatus: gpsData.status,
-          observation: punchObservation.trim()
-        };
-
-        setPunchRecords(prev => [record, ...prev]);
-        setIsModalOpen(false);
-
-        // Feedback Toast
-        setToastMessage(`Ponto "${selectedPunchType}" registrado com sucesso!`);
-        setTimeout(() => setToastMessage(''), 4000);
-      };
-
-      // Novo Residente (Coordenação)
-      const handleRegisterResident = (e) => {
-        e.preventDefault();
-        if (!newRes.name || !newRes.email || !newRes.pass) {
-          setAdminNotice('Preencha os campos obrigatórios (*)');
-          return;
-        }
-
-        const created = {
-          id: 'res-' + Date.now(),
-          name: newRes.name,
-          crmv: newRes.crmv || 'CRMV-MT Indefinido',
-          area: newRes.area || 'Residência Veterinária',
-          email: newRes.email,
-          pass: newRes.pass,
-          role: 'resident'
-        };
-
-        setUsers(prev => [...prev, created]);
-        setNewRes({ name: '', crmv: '', area: '', email: '', pass: '' });
-        setAdminNotice('Residente cadastrado com sucesso!');
-        setTimeout(() => setAdminNotice(''), 3000);
-      };
-
-      const handleDeleteUser = (id) => {
-        if (confirm('Deseja realmente remover este residente?')) {
-          setUsers(prev => prev.filter(u => u.id !== id));
-        }
-      };
-
-      // Filtragem dos registros
-      const filteredRecords = useMemo(() => {
-        return punchRecords.filter(rec => {
-          // Se não for admin, vê APENAS os seus pontos
-          if (currentUser?.role !== 'admin') {
-            if (rec.residentId !== currentUser.id) return false;
-          } else {
-            // Filtro Admin por Residente
-            if (filterResidentId !== 'ALL' && rec.residentId !== filterResidentId) return false;
-          }
-
-          // Filtro por Data
-          if (filterStartDate && rec.date < filterStartDate) return false;
-          if (filterEndDate && rec.date > filterEndDate) return false;
-
-          return true;
-        });
-      }, [punchRecords, currentUser, filterResidentId, filterStartDate, filterEndDate]);
-
-      // Configuração dos Botões de Ponto
-      const PUNCH_BUTTONS = [
-        { label: 'Entrada', color: 'from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 border-emerald-500/40', icon: 'fa-right-to-bracket' },
-        { label: 'Saída Almoço', color: 'from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 border-amber-500/40', icon: 'fa-utensils' },
-        { label: 'Retorno Almoço', color: 'from-teal-600 to-cyan-700 hover:from-teal-500 hover:to-cyan-600 border-teal-500/40', icon: 'fa-rotate-left' },
-        { label: 'Saída', color: 'from-rose-600 to-red-700 hover:from-rose-500 hover:to-red-600 border-rose-500/40', icon: 'fa-right-from-bracket' },
-        { label: 'Entrada Plantão', color: 'from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 border-indigo-500/40', icon: 'fa-user-nurse' },
-        { label: 'Saída Plantão', color: 'from-purple-600 to-violet-700 hover:from-purple-500 hover:to-violet-600 border-purple-500/40', icon: 'fa-business-time' }
-      ];
-
-      // Resetar dados para o estado inicial
-      const resetDatabase = () => {
-        if (confirm('Tem certeza que deseja restaurar os dados de demonstração originais?')) {
-          setUsers(INITIAL_USERS);
-          setPunchRecords(INITIAL_RECORDS);
-          localStorage.removeItem('hovet_users');
-          localStorage.removeItem('hovet_records');
-          alert('Dados restaurados com sucesso.');
-        }
-      };
-
-      // =======================================================
-      // TELA DE LOGIN (Sem Autenticação)
-      // =======================================================
-      if (!currentUser) {
-        return (
-          <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden">
-            {/* Elementos visuais de fundo */}
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-            <div className="w-full max-w-md bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-10">
-              
-              {/* Header do Card */}
-              <div className="bg-gradient-to-r from-ufmt-darkgreen via-emerald-800 to-teal-900 p-6 text-center border-b border-emerald-600/30">
-                <div className="inline-flex p-3 bg-white/10 rounded-2xl mb-3 backdrop-blur-md">
-                  <i className="fa-solid fa-stethoscope text-3xl text-emerald-300"></i>
-                </div>
-                <h1 className="text-xl font-black text-white tracking-wide">HOVET UFMT SINOP</h1>
-                <p className="text-xs text-emerald-200 font-medium mt-1">Sistema Eletrônico de Frequência de Residentes</p>
-              </div>
-
-              <div className="p-6 space-y-5">
-                
-                {/* Seletor de Perfil (Residente vs Coordenação) */}
-                <div className="bg-slate-950 p-1 rounded-xl flex border border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setLoginRoleToggle('resident')}
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                      loginRoleToggle === 'resident'
-                        ? 'bg-emerald-600 text-white shadow-md'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <i className="fa-solid fa-user-doctor"></i> Residente
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoginRoleToggle('admin')}
-                    className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                      loginRoleToggle === 'admin'
-                        ? 'bg-ufmt-blue text-white shadow-md'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <i className="fa-solid fa-user-shield"></i> Coordenação
-                  </button>
-                </div>
-
-                {loginError && (
-                  <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs p-3 rounded-xl flex items-center gap-2">
-                    <i className="fa-solid fa-triangle-exclamation text-rose-400"></i>
-                    <span>{loginError}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Usuário / E-mail
-                    </label>
-                    <div className="relative">
-                      <i className="fa-solid fa-user absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                      <input
-                        type="text"
-                        required
-                        value={loginUser}
-                        onChange={(e) => setLoginUser(e.target.value)}
-                        placeholder={loginRoleToggle === 'resident' ? 'maria' : 'admin'}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                      Senha
-                    </label>
-                    <div className="relative">
-                      <i className="fa-solid fa-lock absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                      <input
-                        type="password"
-                        required
-                        value={loginPass}
-                        onChange={(e) => setLoginPass(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className={`w-full py-3 rounded-xl text-sm font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 ${
-                      loginRoleToggle === 'resident'
-                        ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/40'
-                        : 'bg-ufmt-blue hover:bg-blue-600 shadow-blue-900/40'
-                    }`}
-                  >
-                    <span>Acessar Painel</span>
-                    <i className="fa-solid fa-arrow-right"></i>
-                  </button>
-                </form>
-
-                {/* BOTÕES DE TESTE RÁPIDO */}
-                <div className="pt-4 border-t border-slate-800 space-y-2">
-                  <p className="text-[11px] text-slate-400 font-semibold text-center uppercase tracking-wider">
-                    Acesso Rápido para Testes Rápidos:
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('maria')}
-                      className="p-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl text-left transition-all"
-                    >
-                      <div className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                        <i className="fa-solid fa-user"></i> Dra. Maria
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono">User: maria | 123</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => quickLogin('admin')}
-                      className="p-2.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl text-left transition-all"
-                    >
-                      <div className="text-xs font-bold text-blue-400 flex items-center gap-1">
-                        <i className="fa-solid fa-shield-halved"></i> Coordenação
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-mono">User: admin | 123</div>
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="p-3 bg-slate-950 text-center border-t border-slate-800/80 text-[11px] text-slate-500">
-                Hospital Veterinário HOVET - UFMT Sinop
-              </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Tipo de Evento</label>
+              <select id="punchType" class="w-full bg-slate-50 border border-slate-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="Entrada">Entrada (Início de Turno)</option>
+                <option value="Saída para Almoço">Saída para Almoço</option>
+                <option value="Retorno do Almoço">Retorno do Almoço</option>
+                <option value="Saída">Saída (Fim de Turno)</option>
+              </select>
             </div>
           </div>
-        );
-      }
 
-      // =======================================================
-      // TELA PRINCIPAL (LOGADO)
-      // =======================================================
-      return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100 font-sans">
-          
-          {/* TOAST NOTIFICAÇÃO */}
-          {toastMessage && (
-            <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-emerald-400 animate-bounce">
-              <i className="fa-solid fa-circle-check text-xl"></i>
-              <span className="text-xs font-bold">{toastMessage}</span>
-            </div>
-          )}
-
-          {/* BARRA LATERAL DA APLICAÇÃO */}
-          <aside className="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
-            {/* Topo do Menu */}
-            <div className="p-5 border-b border-slate-800 bg-gradient-to-b from-slate-850 to-slate-900">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-600 text-white rounded-xl shadow-lg">
-                  <i className="fa-solid fa-hospital text-xl"></i>
-                </div>
-                <div>
-                  <h1 className="font-extrabold text-sm leading-tight text-white">HOVET UFMT</h1>
-                  <p className="text-[11px] text-emerald-400 font-semibold">Campus de Sinop</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Cartão de Perfil Logado */}
-            <div className="p-4 bg-slate-950/60 border-b border-slate-800/80 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-emerald-400 text-sm shadow">
-                {currentUser.name.charAt(0)}
-              </div>
-              <div className="overflow-hidden">
-                <p className="text-xs font-bold text-white truncate">{currentUser.name}</p>
-                <p className="text-[10px] text-slate-400 truncate">{currentUser.area}</p>
-                <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase mt-1 ${
-                  currentUser.role === 'admin' 
-                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
-                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                }`}>
-                  {currentUser.role === 'admin' ? 'Coordenação' : 'Residente'}
-                </span>
-              </div>
-            </div>
-
-            {/* Menu de Navegação */}
-            <nav className="flex-1 p-3 space-y-1">
-              {currentUser.role !== 'admin' && (
-                <button
-                  onClick={() => setActiveTab('punch')}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                    activeTab === 'punch'
-                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <i className="fa-solid fa-clock text-sm w-4"></i>
-                  <span>Bater Ponto</span>
-                </button>
-              )}
-
-              <button
-                onClick={() => setActiveTab('my-report')}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'my-report'
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <i className="fa-solid fa-file-lines text-sm w-4"></i>
-                <span>{currentUser.role === 'admin' ? 'Meus Registros' : 'Meu Relatório'}</span>
-              </button>
-
-              {/* Seções da Coordenação */}
-              {currentUser.role === 'admin' && (
-                <div className="pt-4 mt-2 border-t border-slate-800">
-                  <p className="px-3 text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-2">
-                    Módulos Administrativos
-                  </p>
-
-                  <button
-                    onClick={() => setActiveTab('admin-report')}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                      activeTab === 'admin-report'
-                        ? 'bg-ufmt-blue text-white shadow-lg shadow-blue-950'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    <i className="fa-solid fa-list-check text-sm w-4"></i>
-                    <span>Relatório Geral</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('admin-residents')}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                      activeTab === 'admin-residents'
-                        ? 'bg-ufmt-blue text-white shadow-lg shadow-blue-950'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    <i className="fa-solid fa-user-plus text-sm w-4"></i>
-                    <span>Cadastrar Residentes</span>
-                  </button>
-                </div>
-              )}
-            </nav>
-
-            {/* Rodapé / Sair */}
-            <div className="p-3 border-t border-slate-800 space-y-2">
-              <button
-                onClick={resetDatabase}
-                className="w-full text-[11px] text-slate-500 hover:text-slate-300 py-1 transition-colors text-center block"
-              >
-                Restaurar Dados Iniciais
-              </button>
-
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-all"
-              >
-                <i className="fa-solid fa-right-from-bracket"></i>
-                <span>Sair do Sistema</span>
-              </button>
-            </div>
-          </aside>
-
-          {/* PAINEL DE CONTEÚDO PRINCIPAL */}
-          <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full overflow-y-auto">
-
-            {/* ======================================================= */}
-            {/* ABA: BATER PONTO (Residente)                            */}
-            {/* ======================================================= */}
-            {activeTab === 'punch' && (
-              <div className="space-y-6">
-                
-                {/* Banner com Relógio Digital */}
-                <div className="bg-gradient-to-r from-emerald-900/60 via-slate-900 to-slate-900 p-6 rounded-2xl border border-emerald-500/30 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div>
-                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest">
-                      Residência em Medicina Veterinária
-                    </span>
-                    <h2 className="text-2xl font-black text-white mt-1">Registro de Frequência</h2>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Selecione o tipo de ponto abaixo. Cada lançamento captura sua localização GPS em tempo real.
-                    </p>
-                  </div>
-
-                  {/* Relógio Realtime */}
-                  <div className="bg-slate-950/90 border border-slate-800 p-4 rounded-xl text-center min-w-[220px] shadow-inner">
-                    <div className="text-[11px] font-semibold text-slate-400 uppercase">
-                      {now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' })}
-                    </div>
-                    <div className="text-3xl font-mono font-bold text-emerald-400 tracking-wider mt-1">
-                      {now.toLocaleTimeString('pt-BR')}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Grade dos Botões de Ponto */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {PUNCH_BUTTONS.map((btn) => (
-                    <button
-                      key={btn.label}
-                      onClick={() => triggerPunchModal(btn.label)}
-                      className={`bg-gradient-to-br ${btn.color} p-5 rounded-2xl border shadow-lg text-white text-left transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-between group`}
-                    >
-                      <div>
-                        <span className="block text-xs uppercase tracking-wider text-white/70 font-semibold">Registrar</span>
-                        <span className="text-lg font-black tracking-wide block mt-0.5">{btn.label}</span>
-                      </div>
-                      <div className="p-3 bg-black/20 rounded-xl group-hover:scale-110 transition-transform">
-                        <i className={`fa-solid ${btn.icon} text-xl`}></i>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Histórico do Dia */}
-                <div className="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-lg">
-                  <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <i className="fa-solid fa-calendar-day text-emerald-400"></i>
-                    Seus Pontos Registrados Hoje ({new Date().toLocaleDateString('pt-BR')})
-                  </h3>
-
-                  {punchRecords.filter(r => r.residentId === currentUser.id && r.date === new Date().toISOString().split('T')[0]).length === 0 ? (
-                    <div className="text-center py-6 text-slate-500 text-xs">
-                      <i className="fa-regular fa-clock text-2xl mb-2 block text-slate-600"></i>
-                      Nenhum ponto registrado hoje até o momento.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {punchRecords
-                        .filter(r => r.residentId === currentUser.id && r.date === new Date().toISOString().split('T')[0])
-                        .map(rec => (
-                          <div key={rec.id} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-3">
-                              <span className="font-mono font-bold text-emerald-400 text-sm bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                                {rec.time}
-                              </span>
-                              <span className="font-bold text-white bg-slate-800 px-2.5 py-1 rounded-lg">
-                                {rec.type}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-3 text-slate-400 text-[11px]">
-                              <span className="flex items-center gap-1">
-                                <i className="fa-solid fa-location-dot text-emerald-400"></i>
-                                GPS Registrado
-                              </span>
-                              {rec.observation && (
-                                <span className="bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded border border-amber-500/20 italic">
-                                  Com observação
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
-
-              </div>
-            )}
-
-            {/* ======================================================= */}
-            {/* MODAL DE CONFIRMAÇÃO DO PONTO                           */}
-            {/* ======================================================= */}
-            {isModalOpen && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                <div className="bg-slate-900 border border-slate-700 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden space-y-4">
-                  
-                  {/* Topo Modal */}
-                  <div className="bg-slate-850 p-4 border-b border-slate-800 flex justify-between items-center">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <i className="fa-solid fa-clipboard-check text-emerald-400"></i>
-                      Confirmar Ponto: <span className="text-emerald-400">{selectedPunchType}</span>
-                    </h3>
-                    <button 
-                      onClick={() => setIsModalOpen(false)}
-                      className="text-slate-400 hover:text-white text-lg w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-800"
-                    >
-                      &times;
-                    </button>
-                  </div>
-
-                  <div className="p-5 space-y-4">
-                    {/* Info Resumo */}
-                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Residente:</span>
-                        <span className="font-bold text-white">{currentUser.name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Horário Oficial:</span>
-                        <span className="font-mono font-bold text-emerald-400 text-sm">{now.toLocaleTimeString('pt-BR')}</span>
-                      </div>
-                      
-                      {/* Status do GPS */}
-                      <div className="pt-2 border-t border-slate-800 flex flex-col gap-1">
-                        <span className="text-slate-400 font-semibold flex items-center gap-1.5">
-                          <i className="fa-solid fa-location-crosshairs text-emerald-400"></i>
-                          Status da Geolocalização:
-                        </span>
-                        {isFetchingGps ? (
-                          <span className="text-amber-400 animate-pulse font-mono text-[11px]">
-                            <i className="fa-solid fa-spinner fa-spin mr-1"></i> Obtendo coordenadas GPS do dispositivo...
-                          </span>
-                        ) : (
-                          <div className="flex items-center justify-between">
-                            <span className={`font-mono text-[11px] ${gpsData.error ? 'text-amber-400' : 'text-emerald-400'}`}>
-                              {gpsData.status}
-                            </span>
-                            <span className="font-mono text-[10px] text-slate-500">
-                              [{gpsData.lat?.toFixed(4)}, {gpsData.lng?.toFixed(4)}]
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Observação Opcional */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">
-                        Observação / Justificativa <span className="text-slate-500 font-normal">(Opcional)</span>
-                      </label>
-                      <textarea
-                        rows="3"
-                        value={punchObservation}
-                        onChange={(e) => setPunchObservation(e.target.value)}
-                        placeholder="Caso necessário, digite um comentário sobre o seu ponto (ex: atraso por emergência cirúrgica)..."
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
-                      ></textarea>
-                    </div>
-                  </div>
-
-                  {/* Rodapé Modal */}
-                  <div className="bg-slate-950 p-4 border-t border-slate-800 flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsModalOpen(false)}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isFetchingGps}
-                      onClick={confirmPunch}
-                      className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-xs font-bold text-white shadow-lg shadow-emerald-950 flex items-center gap-2 transition-all"
-                    >
-                      <i className="fa-solid fa-circle-check"></i>
-                      Confirmar e Salvar
-                    </button>
-                  </div>
-
-                </div>
-              </div>
-            )}
-
-            {/* ======================================================= */}
-            {/* ABA: MEU RELATÓRIO (Residente ou Admin vendo o próprio) */}
-            {/* ======================================================= */}
-            {activeTab === 'my-report' && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-black text-white">Meu Relatório de Pontos</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Histórico pessoal de registros de <strong className="text-emerald-400">{currentUser.name}</strong>.
-                  </p>
-                </div>
-
-                {/* Filtro de Período */}
-                <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center gap-4 text-xs shadow-lg">
-                  <div className="flex items-center gap-2 font-bold text-slate-300">
-                    <i className="fa-solid fa-filter text-emerald-400"></i>
-                    <span>Filtrar Período:</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400">De:</span>
-                    <input
-                      type="date"
-                      value={filterStartDate}
-                      onChange={(e) => setFilterStartDate(e.target.value)}
-                      className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400">Até:</span>
-                    <input
-                      type="date"
-                      value={filterEndDate}
-                      onChange={(e) => setFilterEndDate(e.target.value)}
-                      className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
-                    />
-                  </div>
-
-                  {(filterStartDate || filterEndDate) && (
-                    <button
-                      onClick={() => { setFilterStartDate(''); setFilterEndDate(''); }}
-                      className="text-emerald-400 hover:underline font-semibold ml-auto text-xs"
-                    >
-                      Limpar Filtros
-                    </button>
-                  )}
-                </div>
-
-                {/* Tabela de Pontos */}
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                        <tr>
-                          <th className="p-4">Data & Hora</th>
-                          <th className="p-4">Tipo de Registro</th>
-                          <th className="p-4">Geolocalização (GPS)</th>
-                          <th className="p-4">Observação / Justificativa</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800">
-                        {filteredRecords.length === 0 ? (
-                          <tr>
-                            <td colSpan="4" className="p-8 text-center text-slate-500">
-                              Nenhum ponto encontrado no período selecionado.
-                            </td>
-                          </tr>
-                        ) : (
-                          filteredRecords.map(rec => (
-                            <tr key={rec.id} className="hover:bg-slate-850/50 transition-colors">
-                              <td className="p-4 font-mono">
-                                <div className="font-bold text-white">{rec.date}</div>
-                                <div className="text-emerald-400 font-bold">{rec.time}</div>
-                              </td>
-                              <td className="p-4">
-                                <span className="px-3 py-1 rounded-lg font-bold bg-slate-800 border border-slate-700 text-slate-200 inline-block">
-                                  {rec.type}
-                                </span>
-                              </td>
-                              <td className="p-4">
-                                <div className="flex items-center gap-2">
-                                  <i className="fa-solid fa-location-dot text-emerald-400"></i>
-                                  <a
-                                    href={`https://maps.google.com/?q=${rec.lat},${rec.lng}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="font-mono text-emerald-400 hover:underline text-[11px] flex items-center gap-1"
-                                  >
-                                    Ver Mapa ({rec.lat.toFixed(4)}, {rec.lng.toFixed(4)})
-                                    <i className="fa-solid fa-up-right-from-square text-[9px]"></i>
-                                  </a>
-                                </div>
-                              </td>
-                              <td className="p-4">
-                                {rec.observation ? (
-                                  <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 p-2.5 rounded-xl text-[11px]">
-                                    {rec.observation}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-600 italic">Sem observação</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-            {/* ======================================================= */}
-            {/* ABA: RELATÓRIO GERAL (Exclusivo Coordenação)           */}
-            {/* ======================================================= */}
-            {activeTab === 'admin-report' && currentUser.role === 'admin' && (
-              <div className="space-y-6">
-                <div>
-                  <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                    Painel da Coordenação HOVET
-                  </span>
-                  <h2 className="text-2xl font-black text-white mt-1">Relatório Geral de Pontos</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Visualização consolidada de todos os registros efetuados pelos Médicos Veterinários Residentes.
-                  </p>
-                </div>
-
-                {/* Filtros da Coordenação */}
-                <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs shadow-lg">
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1.5">Filtrar por Residente:</label>
-                    <select
-                      value={filterResidentId}
-                      onChange={(e) => setFilterResidentId(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="ALL">Todos os Residentes</option>
-                      {users.filter(u => u.role !== 'admin').map(u => (
-                        <option key={u.id} value={u.id}>{u.name} ({u.crmv})</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1.5">Data Inicial:</label>
-                    <input
-                      type="date"
-                      value={filterStartDate}
-                      onChange={(e) => setFilterStartDate(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 font-bold mb-1.5">Data Final:</label>
-                    <input
-                      type="date"
-                      value={filterEndDate}
-                      onChange={(e) => setFilterEndDate(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-white"
-                    />
-                  </div>
-                </div>
-
-                {/* Tabela de Relatório Geral */}
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-                  <div className="p-4 bg-slate-950 border-b border-slate-800 flex justify-between items-center text-xs">
-                    <span className="font-bold text-slate-300">
-                      Total de registros exibidos: <strong className="text-blue-400 font-mono">{filteredRecords.length}</strong>
-                    </span>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider">
-                        <tr>
-                          <th className="p-4">Residente</th>
-                          <th className="p-4">Data & Hora</th>
-                          <th className="p-4">Tipo</th>
-                          <th className="p-4">Localização (GPS)</th>
-                          <th className="p-4">Observação / Justificativa</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800">
-                        {filteredRecords.length === 0 ? (
-                          <tr>
-                            <td colSpan="5" className="p-8 text-center text-slate-500">
-                              Nenhum registro encontrado para os filtros selecionados.
-                            </td>
-                          </tr>
-                        ) : (
-                          filteredRecords.map(rec => (
-                            <tr key={rec.id} className="hover:bg-slate-850/50 transition-colors">
-                              <td className="p-4">
-                                <div className="font-bold text-white text-xs">{rec.residentName}</div>
-                                <div className="text-[10px] text-slate-400 font-mono">{rec.crmv}</div>
-                              </td>
-                              <td className="p-4 font-mono">
-                                <div className="text-slate-300">{rec.date}</div>
-                                <div className="text-blue-400 font-bold">{rec.time}</div>
-                              </td>
-                              <td className="p-4">
-                                <span className="px-2.5 py-1 rounded-lg font-bold bg-slate-800 border border-slate-700 text-slate-200 inline-block">
-                                  {rec.type}
-                                </span>
-                              </td>
-                              <td className="p-4">
-                                <a
-                                  href={`https://maps.google.com/?q=${rec.lat},${rec.lng}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1.5 text-blue-400 hover:underline font-mono text-[11px] bg-blue-500/10 px-2.5 py-1 rounded-lg border border-blue-500/20"
-                                >
-                                  <i className="fa-solid fa-map-pin"></i>
-                                  <span>{rec.lat.toFixed(4)}, {rec.lng.toFixed(4)}</span>
-                                  <i className="fa-solid fa-up-right-from-square text-[9px]"></i>
-                                </a>
-                              </td>
-                              <td className="p-4">
-                                {rec.observation ? (
-                                  <div className="bg-amber-500/10 border border-amber-500/20 text-amber-300 p-2.5 rounded-xl text-[11px]">
-                                    {rec.observation}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-600 italic">Nenhuma observação</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-            {/* ======================================================= */}
-            {/* ABA: CADASTRO DE RESIDENTES (Exclusivo Coordenação)    */}
-            {/* ======================================================= */}
-            {activeTab === 'admin-residents' && currentUser.role === 'admin' && (
-              <div className="space-y-6">
-                <div>
-                  <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                    Gestão da Equipe
-                  </span>
-                  <h2 className="text-2xl font-black text-white mt-1">Cadastro de Residentes</h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Cadastre e gerencie o acesso dos Médicos Veterinários ao sistema de frequência.
-                  </p>
-                </div>
-
-                {/* Formulário */}
-                <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <i className="fa-solid fa-user-plus text-blue-400"></i>
-                    Novo Residente Veterinário
-                  </h3>
-
-                  {adminNotice && (
-                    <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs p-3 rounded-xl">
-                      {adminNotice}
-                    </div>
-                  )}
-
-                  <form onSubmit={handleRegisterResident} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-                    <div>
-                      <label className="block text-slate-400 font-bold mb-1">Nome Completo *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ex: Dra. Juliana Santos"
-                        value={newRes.name}
-                        onChange={(e) => setNewRes({ ...newRes, name: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-400 font-bold mb-1">CRMV *</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: CRMV-MT 6120"
-                        value={newRes.crmv}
-                        onChange={(e) => setNewRes({ ...newRes, crmv: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-400 font-bold mb-1">Especialidade / Setor</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Anestesiologia, Cirurgia..."
-                        value={newRes.area}
-                        onChange={(e) => setNewRes({ ...newRes, area: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-400 font-bold mb-1">Usuário / E-mail de Login *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="ex: juliana"
-                        value={newRes.email}
-                        onChange={(e) => setNewRes({ ...newRes, email: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-400 font-bold mb-1">Senha de Acesso *</label>
-                      <input
-                        type="password"
-                        required
-                        placeholder="••••••••"
-                        value={newRes.pass}
-                        onChange={(e) => setNewRes({ ...newRes, pass: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white"
-                      />
-                    </div>
-
-                    <div className="flex items-end">
-                      <button
-                        type="submit"
-                        className="w-full bg-ufmt-blue hover:bg-blue-600 text-white font-bold p-2.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
-                      >
-                        <i className="fa-solid fa-plus"></i>
-                        Cadastrar Residente
-                      </button>
-                    </div>
-                  </form>
-                </div>
-
-                {/* Lista de Usuários */}
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-                  <div className="p-4 bg-slate-950 border-b border-slate-800">
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                      Residentes Cadastrados ({users.length})
-                    </h3>
-                  </div>
-
-                  <div className="divide-y divide-slate-800 text-xs">
-                    {users.map(u => (
-                      <div key={u.id} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-850/50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-blue-400 text-sm">
-                            {u.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-bold text-white">{u.name}</p>
-                            <p className="text-slate-400 text-[11px]">{u.crmv} • {u.area}</p>
-                            <p className="text-slate-500 text-[11px] font-mono">Usuário: {u.email}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${
-                            u.role === 'admin' 
-                              ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
-                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          }`}>
-                            {u.role === 'admin' ? 'Coordenação' : 'Residente'}
-                          </span>
-
-                          {u.role !== 'admin' && (
-                            <button
-                              onClick={() => handleDeleteUser(u.id)}
-                              className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-xl border border-rose-500/20 transition-colors"
-                              title="Excluir Residente"
-                            >
-                              <i className="fa-solid fa-trash-can"></i>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-          </main>
+          <button onclick="registerPunch()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition shadow-sm flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-fingerprint"></i>
+            <span>Confirmar Registro de Ponto</span>
+          </button>
         </div>
-      );
+
+        <!-- RELÓGIO E STATUS -->
+        <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 text-center flex flex-col justify-center items-center">
+          <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Horário Oficial de Brasília</span>
+          <div id="liveClock" class="text-3xl font-extrabold text-slate-800 tracking-tight">00:00:00</div>
+          <div id="liveDate" class="text-xs text-slate-500 mt-1 capitalize"></div>
+        </div>
+      </div>
+
+      <!-- MEU HISTÓRICO -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <h3 class="text-lg font-bold text-slate-900 mb-4">Meu Histórico de Registros</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase font-semibold">
+                <th class="py-3 px-4">Data</th>
+                <th class="py-3 px-4">Hora</th>
+                <th class="py-3 px-4">Tipo</th>
+                <th class="py-3 px-4">Setor</th>
+              </tr>
+            </thead>
+            <tbody id="residentHistoryBody" class="divide-y divide-slate-100 text-sm">
+              <!-- Preenchido via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- PAINEL DO COORDENADOR -->
+    <section id="coordinatorDashboard" class="hidden space-y-6">
+      
+      <!-- ABAS DE NAVEGAÇÃO DO COORDENADOR -->
+      <div class="flex flex-wrap gap-2 border-b border-slate-200">
+        <button id="tabBtnRelatorio" onclick="switchCoordTab('relatorio')" class="py-2.5 px-4 text-sm font-semibold border-b-2 border-blue-600 text-blue-600">
+          <i class="fa-solid fa-table-list me-1.5"></i> Relatório Geral de Pontos
+        </button>
+        <button id="tabBtnResidentes" onclick="switchCoordTab('residentes')" class="py-2.5 px-4 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-800">
+          <i class="fa-solid fa-user-plus me-1.5"></i> Cadastrar & Gerenciar Residentes
+        </button>
+        <button id="tabBtnPerfil" onclick="switchCoordTab('perfil')" class="py-2.5 px-4 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-800">
+          <i class="fa-solid fa-user-gear me-1.5"></i> Meu Perfil (E-mail)
+        </button>
+      </div>
+
+      <!-- ABA 1: RELATÓRIO GERAL (CONSOLIDADO EM UMA LINHA) -->
+      <div id="tabContentRelatorio" class="space-y-6">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-xl font-bold text-slate-900">Relatório Geral Consolidado</h2>
+              <p class="text-sm text-slate-500">Visualização unificada de entradas e saídas por residente e dia.</p>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <select id="filterResidentRelatorio" onchange="renderGeneralReport()" class="bg-slate-50 border border-slate-300 rounded-lg text-sm p-2">
+                <option value="ALL">Todos os Residentes</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- TABELA DE RELATÓRIO UNIFICADO -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase font-semibold">
+                  <th class="py-3 px-4">Residente</th>
+                  <th class="py-3 px-4">Data</th>
+                  <th class="py-3 px-4">Setor</th>
+                  <th class="py-3 px-4 text-center bg-slate-50/50">Entrada</th>
+                  <th class="py-3 px-4 text-center bg-slate-50/50">Saída Almoço</th>
+                  <th class="py-3 px-4 text-center bg-slate-50/50">Volta Almoço</th>
+                  <th class="py-3 px-4 text-center bg-slate-50/50">Saída</th>
+                </tr>
+              </thead>
+              <tbody id="generalReportBody" class="divide-y divide-slate-100 text-sm">
+                <!-- Preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA 2: CADASTRO E GERENCIAMENTO DE RESIDENTES -->
+      <div id="tabContentResidentes" class="hidden space-y-6">
+        
+        <!-- CARD FORMULÁRIO DE CADASTRO -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Cadastrar Novo Residente</h3>
+          <p class="text-sm text-slate-500 mb-4">Adicione um novo médico veterinário à lista oficial da residência.</p>
+
+          <form id="addResidentForm" onsubmit="handleAddResident(event)" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Nome Completo</label>
+              <input type="text" id="newResidentName" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Dr. Nome Sobrenome">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">E-mail de Acesso</label>
+              <input type="email" id="newResidentEmail" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="nome@ufmt.br">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Senha Provisória</label>
+              <input type="password" id="newResidentPassword" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="••••••••">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Setor Principal</label>
+              <select id="newResidentSector" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <option value="Anestesiologia Veterinária">Anestesiologia Veterinária</option>
+                <option value="Clínica Cirúrgica de Animais de Companhia">Clínica Cirúrgica de Animais de Companhia</option>
+                <option value="Clínica Médica de Animais de Companhia">Clínica Médica de Animais de Companhia</option>
+                <option value="Clínica Médica e Cirúrgica de Grandes Animais">Clínica Médica e Cirúrgica de Grandes Animais</option>
+                <option value="Diagnóstico por Imagem em Medicina Veterinária">Diagnóstico por Imagem em Medicina Veterinária</option>
+                <option value="Medicina Veterinária Preventiva">Medicina Veterinária Preventiva</option>
+                <option value="Patologia Animal">Patologia Animal</option>
+                <option value="Patologia Clínica Veterinária">Patologia Clínica Veterinária</option>
+                <option value="Reprodução Animal e Obstetrícia Veterinária nos Animais Domésticos">Reprodução Animal e Obstetrícia Veterinária nos Animais Domésticos</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-2 md:col-span-4 flex justify-end">
+              <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg text-sm transition shadow-sm">
+                <i class="fa-solid fa-user-check me-1"></i> Cadastrar Residente
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- LISTA E EXCLUSÃO DE RESIDENTES -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-900 mb-4">Residentes Cadastrados</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-slate-500 text-xs uppercase font-semibold">
+                  <th class="py-3 px-4">Nome</th>
+                  <th class="py-3 px-4">E-mail</th>
+                  <th class="py-3 px-4">Setor Principal</th>
+                  <th class="py-3 px-4 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody id="residentManageBody" class="divide-y divide-slate-100 text-sm">
+                <!-- Preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ABA 3: PERFIL DO COORDENADOR (EDIÇÃO DE E-MAIL) -->
+      <div id="tabContentPerfil" class="hidden space-y-6 max-w-xl">
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Configurações de Acesso do Coordenador</h3>
+          <p class="text-sm text-slate-500 mb-4">Altere o e-mail utilizado para autenticação do coordenador no sistema.</p>
+
+          <form id="coordProfileForm" onsubmit="handleUpdateCoordEmail(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-700 mb-1">Novo E-mail do Coordenador</label>
+              <input type="email" id="coordEmailInput" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition shadow-sm">
+              <i class="fa-solid fa-floppy-disk me-1"></i> Salvar Novo E-mail
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- RODAPÉ -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto text-center text-xs text-slate-400">
+    <p>Hospital Veterinário - Universidade Federal de Mato Grosso (HOVET/UFMT)</p>
+    <p class="mt-1">Sistema Integrado de Ponto Eletrônico da Residência</p>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    const OFFICIAL_SECTORS = [
+      "Anestesiologia Veterinária",
+      "Clínica Cirúrgica de Animais de Companhia",
+      "Clínica Médica de Animais de Companhia",
+      "Clínica Médica e Cirúrgica de Grandes Animais",
+      "Diagnóstico por Imagem em Medicina Veterinária",
+      "Medicina Veterinária Preventiva",
+      "Patologia Animal",
+      "Patologia Clínica Veterinária",
+      "Reprodução Animal e Obstetrícia Veterinária nos Animais Domésticos"
+    ];
+
+    const DEFAULT_USERS = [
+      { id: '1', name: 'Dr. Lucas Mendes (Residente)', email: 'residente@ufmt.br', pass: '123456', role: 'resident', sector: 'Clínica Médica de Animais de Companhia' },
+      { id: '2', name: 'Dra. Marina Santos (Residente)', email: 'marina@ufmt.br', pass: '123456', role: 'resident', sector: 'Anestesiologia Veterinária' },
+      { id: '99', name: 'Prof. Coordenador HOVET', email: 'coord@ufmt.br', pass: '123456', role: 'coordinator', sector: 'Geral' }
+    ];
+
+    const DEFAULT_PUNCHES = [
+      { id: 101, userId: '1', userName: 'Dr. Lucas Mendes (Residente)', date: '2026-03-29', time: '07:30', type: 'Entrada', sector: 'Clínica Médica de Animais de Companhia' },
+      { id: 102, userId: '1', userName: 'Dr. Lucas Mendes (Residente)', date: '2026-03-29', time: '11:45', type: 'Saída para Almoço', sector: 'Clínica Médica de Animais de Companhia' },
+      { id: 103, userId: '1', userName: 'Dr. Lucas Mendes (Residente)', date: '2026-03-29', time: '13:00', type: 'Retorno do Almoço', sector: 'Clínica Médica de Animais de Companhia' },
+      { id: 104, userId: '1', userName: 'Dr. Lucas Mendes (Residente)', date: '2026-03-29', time: '17:30', type: 'Saída', sector: 'Clínica Médica de Animais de Companhia' }
+    ];
+
+    let currentUser = null;
+    let users = JSON.parse(localStorage.getItem('hovet_users')) || DEFAULT_USERS;
+    let punches = JSON.parse(localStorage.getItem('hovet_punches')) || DEFAULT_PUNCHES;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      startClock();
+      checkSession();
+    });
+
+    function startClock() {
+      const update = () => {
+        const now = new Date();
+        document.getElementById('liveClock').innerText = now.toLocaleTimeString('pt-BR');
+        document.getElementById('liveDate').innerText = now.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      };
+      update();
+      setInterval(update, 1000);
     }
 
-    // Renderizar a Aplicação
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+
+      const user = users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
+
+      if (user) {
+        currentUser = user;
+        localStorage.setItem('hovet_session', JSON.stringify(user));
+        document.getElementById('loginError').classList.add('hidden');
+        renderApp();
+      } else {
+        document.getElementById('loginError').classList.remove('hidden');
+      }
+    }
+
+    function checkSession() {
+      const session = localStorage.getItem('hovet_session');
+      if (session) {
+        currentUser = JSON.parse(session);
+        renderApp();
+      } else {
+        showLogin();
+      }
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('hovet_session');
+      showLogin();
+    }
+
+    function showLogin() {
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('residentDashboard').classList.add('hidden');
+      document.getElementById('coordinatorDashboard').classList.add('hidden');
+      document.getElementById('userHeaderInfo').classList.add('hidden');
+    }
+
+    function renderApp() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('userHeaderInfo').classList.remove('hidden');
+      document.getElementById('userName').innerText = currentUser.name;
+      document.getElementById('userRole').innerText = currentUser.role === 'coordinator' ? 'Coordenador' : 'Residente';
+
+      if (currentUser.role === 'resident') {
+        document.getElementById('residentDashboard').classList.remove('hidden');
+        document.getElementById('coordinatorDashboard').classList.add('hidden');
+        document.getElementById('residentSector').value = currentUser.sector || OFFICIAL_SECTORS[0];
+        renderResidentHistory();
+      } else {
+        document.getElementById('coordinatorDashboard').classList.remove('hidden');
+        document.getElementById('residentDashboard').classList.add('hidden');
+        document.getElementById('coordEmailInput').value = currentUser.email;
+        populateResidentFilter();
+        renderGeneralReport();
+        renderResidentManagementList();
+      }
+    }
+
+    function registerPunch() {
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+
+      const sector = document.getElementById('residentSector').value;
+      const type = document.getElementById('punchType').value;
+
+      const newPunch = {
+        id: Date.now(),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        date: dateStr,
+        time: timeStr,
+        type: type,
+        sector: sector
+      };
+
+      punches.unshift(newPunch);
+      saveData();
+      renderResidentHistory();
+      alert(`Ponto registrado com sucesso!\nHorário: ${timeStr} | Tipo: ${type}`);
+    }
+
+    function renderResidentHistory() {
+      const tbody = document.getElementById('residentHistoryBody');
+      const userPunches = punches.filter(p => p.userId === currentUser.id);
+
+      if (userPunches.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400">Nenhum registro encontrado.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = userPunches.map(p => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-4 font-medium">${formatDate(p.date)}</td>
+          <td class="py-3 px-4 font-semibold text-blue-600">${p.time}</td>
+          <td class="py-3 px-4">${p.type}</td>
+          <td class="py-3 px-4 text-slate-600">${p.sector}</td>
+        </tr>
+      `).join('');
+    }
+
+    // COORDENADOR: TROCA DE ABAS
+    function switchCoordTab(tab) {
+      document.getElementById('tabContentRelatorio').classList.add('hidden');
+      document.getElementById('tabContentResidentes').classList.add('hidden');
+      document.getElementById('tabContentPerfil').classList.add('hidden');
+
+      document.getElementById('tabBtnRelatorio').className = "py-2.5 px-4 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-800";
+      document.getElementById('tabBtnResidentes').className = "py-2.5 px-4 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-800";
+      document.getElementById('tabBtnPerfil').className = "py-2.5 px-4 text-sm font-semibold text-slate-500 border-b-2 border-transparent hover:text-slate-800";
+
+      if (tab === 'relatorio') {
+        document.getElementById('tabContentRelatorio').classList.remove('hidden');
+        document.getElementById('tabBtnRelatorio').className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-blue-600 text-blue-600";
+      } else if (tab === 'residentes') {
+        document.getElementById('tabContentResidentes').classList.remove('hidden');
+        document.getElementById('tabBtnResidentes').className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-blue-600 text-blue-600";
+      } else if (tab === 'perfil') {
+        document.getElementById('tabContentPerfil').classList.remove('hidden');
+        document.getElementById('tabBtnPerfil').className = "py-2.5 px-4 text-sm font-semibold border-b-2 border-blue-600 text-blue-600";
+      }
+    }
+
+    function populateResidentFilter() {
+      const select = document.getElementById('filterResidentRelatorio');
+      const residents = users.filter(u => u.role === 'resident');
+      select.innerHTML = `<option value="ALL">Todos os Residentes</option>` + 
+        residents.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+    }
+
+    // RELATÓRIO GERAL CONSOLIDADO EM UMA ÚNICA LINHA
+    function renderGeneralReport() {
+      const tbody = document.getElementById('generalReportBody');
+      const filterId = document.getElementById('filterResidentRelatorio').value;
+
+      let filteredPunches = punches;
+      if (filterId !== 'ALL') {
+        filteredPunches = punches.filter(p => p.userId === filterId);
+      }
+
+      // Agrupa marcações por Residente + Data
+      const grouped = {};
+      filteredPunches.forEach(p => {
+        const key = `${p.userId}_${p.date}`;
+        if (!grouped[key]) {
+          grouped[key] = {
+            userName: p.userName,
+            date: p.date,
+            sector: p.sector,
+            entrada: '--:--',
+            saidaAlmoco: '--:--',
+            voltaAlmoco: '--:--',
+            saida: '--:--'
+          };
+        }
+        if (p.type === 'Entrada') grouped[key].entrada = p.time;
+        if (p.type === 'Saída para Almoço') grouped[key].saidaAlmoco = p.time;
+        if (p.type === 'Retorno do Almoço') grouped[key].voltaAlmoco = p.time;
+        if (p.type === 'Saída') grouped[key].saida = p.time;
+      });
+
+      const reportArray = Object.values(grouped);
+
+      if (reportArray.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-slate-400">Nenhum registro para exibir.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = reportArray.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-4 font-medium text-slate-900">${r.userName}</td>
+          <td class="py-3 px-4 text-slate-600">${formatDate(r.date)}</td>
+          <td class="py-3 px-4 text-slate-600">${r.sector}</td>
+          <td class="py-3 px-4 text-center font-semibold text-emerald-600 bg-slate-50/50">${r.entrada}</td>
+          <td class="py-3 px-4 text-center text-amber-600 bg-slate-50/50">${r.saidaAlmoco}</td>
+          <td class="py-3 px-4 text-center text-blue-600 bg-slate-50/50">${r.voltaAlmoco}</td>
+          <td class="py-3 px-4 text-center font-semibold text-slate-700 bg-slate-50/50">${r.saida}</td>
+        </tr>
+      `).join('');
+    }
+
+    // EDIÇÃO DE E-MAIL DO COORDENADOR
+    function handleUpdateCoordEmail(e) {
+      e.preventDefault();
+      const newEmail = document.getElementById('coordEmailInput').value.trim();
+
+      if (!newEmail) return;
+
+      users = users.map(u => u.id === currentUser.id ? { ...u, email: newEmail } : u);
+      currentUser.email = newEmail;
+      
+      saveData();
+      localStorage.setItem('hovet_session', JSON.stringify(currentUser));
+      alert('E-mail do Coordenador atualizado com sucesso!');
+    }
+
+    // CADASTRO E EXCLUSÃO DE RESIDENTES
+    function handleAddResident(e) {
+      e.preventDefault();
+      const name = document.getElementById('newResidentName').value.trim();
+      const email = document.getElementById('newResidentEmail').value.trim();
+      const pass = document.getElementById('newResidentPassword').value.trim();
+      const sector = document.getElementById('newResidentSector').value;
+
+      if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+        alert('Este e-mail já está cadastrado no sistema.');
+        return;
+      }
+
+      const newRes = {
+        id: String(Date.now()),
+        name: name,
+        email: email,
+        pass: pass,
+        role: 'resident',
+        sector: sector
+      };
+
+      users.push(newRes);
+      saveData();
+      populateResidentFilter();
+      renderResidentManagementList();
+
+      document.getElementById('addResidentForm').reset();
+      alert(`Residente ${name} cadastrado com sucesso!`);
+    }
+
+    function renderResidentManagementList() {
+      const tbody = document.getElementById('residentManageBody');
+      const residents = users.filter(u => u.role === 'resident');
+
+      if (residents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-slate-400">Nenhum residente cadastrado.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = residents.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-4 font-medium text-slate-900">${r.name}</td>
+          <td class="py-3 px-4 text-slate-600">${r.email}</td>
+          <td class="py-3 px-4 text-slate-600">${r.sector}</td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="deleteResident('${r.id}', '${r.name}')" class="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 p-1.5 rounded-lg transition" title="Excluir Perfil">
+              <i class="fa-solid fa-trash-can text-sm me-1"></i> Excluir
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function deleteResident(id, name) {
+      if (confirm(`Tem certeza que deseja excluir o residente "${name}"?\nOs registros de ponto associados também serão removidos.`)) {
+        users = users.filter(u => u.id !== id);
+        punches = punches.filter(p => p.userId !== id);
+        saveData();
+        populateResidentFilter();
+        renderGeneralReport();
+        renderResidentManagementList();
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('hovet_users', JSON.stringify(users));
+      localStorage.setItem('hovet_punches', JSON.stringify(punches));
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    }
   </script>
 </body>
 </html>
